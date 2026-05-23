@@ -1,136 +1,119 @@
-# @zeitfall/lists
+## Overview
 
-A professional, minimal, and zero-dependency TypeScript library implementing high-performance linear data structures. Implemented for strict type safety, predictable memory management via aggressive reference nullification for optimal garbage collection, and clean, standardized APIs.
+A minimal, zero-dependency TypeScript library implementing high-performance linear data structures: Singly (`ForwardList`) and Doubly (`LinkedList`) Linked Lists. Engineered for strict type safety, predictable memory management via aggressive reference nullification, and standardized APIs.
 
----
-
-## Requirements
-
-- Node.js `>= 22.19.0`
+**Requirements:** Node.js `>= 22.19.0`
+**Installation:** `npm install @zeitfall/lists`
 
 ---
 
-## Installation
+## Mathematical & Algorithmic Properties
 
-```sh
-npm install @zeitfall/lists
-```
+| Operation / Metric | `ForwardList` | `LinkedList` |
+| --- | --- | --- |
+| Access (Head / Tail) | O(1) | O(1) |
+| Access (Index `i`) | O(n) | O(n) |
+| Search (Value) | O(n) | O(n) |
+| Insertion (Head / Tail) | O(1) | O(1) |
+| Insertion (Index `i`) | O(n) | O(n) |
+| Removal (Head) | O(1) | O(1) |
+| Removal (Tail) | O(n) | O(1) |
+| Removal (Index `i`) | O(n) | O(n) |
+| Space Complexity | O(n) | O(n) |
+
+*Note: `n` represents the total number of elements currently in the list.*
 
 ---
 
-## Usage
+## API Reference
 
-### `ForwardList` — Singly Linked List
+### `List<V unknown>`
 
-```ts
-import { ForwardList } from '@zeitfall/lists';
+The primary shared interface defining the standardized API bounds for all list implementations.
 
-const list = new ForwardList<number>();
+* **Properties**
+`first: V | undefined`, `last: V | undefined`, `size: number`
+* **`at(index: number): V | undefined`**
+Retrieves the value at the specified zero-based index.
+* **`contains(value: V): boolean`**
+Evaluates whether the specified value exists within the list via linear search.
+* **`prepend(value: V): this`**
+Inserts a new value before the current head of the list.
+* **`append(value: V): this`**
+Inserts a new value after the current tail of the list.
+* **`insertAt(index: number, value: V): boolean`**
+Inserts a value at a specific structural index.
+* **`removeFirst(): V | undefined`**
+Removes and returns the value at the head of the list.
+* **`removeLast(): V | undefined`**
+Removes and returns the value at the tail of the list.
+* **`removeAt(index: number): V | undefined`**
+Removes and returns the value at the specified index.
+* **`clear(): void`**
+Drops all internal node references, resetting the structural state to empty.
+* **`toArray(): V[]`**
+Generates a static `Array<V>` snapshot of the current list sequence.
+* **`[Symbol.iterator]()`**
+Yields list values sequentially from head to tail.
 
-// Insertion
-list.append(1).append(2).append(3); // 1 → 2 → 3
-list.prepend(0);                    // 0 → 1 → 2 → 3
+### `ForwardList<V unknown>`
 
-// Access
-list.first;     // 0
-list.last;      // 3
-list.at(2);     // 2
-list.size;      // 4
+The primary structural class representing a singly linked list where each node maintains a single pointer to the subsequent node.
 
-// Search
-list.contains(2); // true
+* **Constructor**
+`constructor()`
+Initializes an empty linear forward-list instance.
+* *Mechanism*: Tail-targeted removal (`#removeLast()`) requires an O(n) forward traversal from the head, as internal nodes lack backward references to preceding structural elements.
 
-// Iteration (Symbol.iterator)
-for (const value of list) {
-  console.log(value); // 0, 1, 2, 3
+### `LinkedList<V unknown>`
+
+The primary structural class representing a doubly linked list where each node maintains pointers to both preceding and subsequent nodes.
+
+* **Constructor**
+`constructor()`
+Initializes an empty bidirectional list instance.
+* *Mechanism*: Tail-targeted operations resolve in O(1) time due to the explicit maintenance of `#tail` and internal node `#previous` references.
+
+---
+
+## Operational Context (Behavioral Notes)
+
+* **Garbage Collection Optimization:** Every structural removal routine (`removeFirst`, `removeLast`, `removeAt`, `clear`) explicitly nullifies the detached node's pointer references (`next` and/or `previous`). This invalidates previously reachable chains at the earliest possible execution phase, permitting the JS Garbage Collector to reclaim detached nodes without awaiting a full heap scan.
+* **Bidirectional Traversal Logic:** Index-based operations within `LinkedList` (such as `.at()`, `.insertAt()`, and `.removeAt()`) employ a targeted traversal algorithm. The internal `#getNodeAt(i)` routine evaluates whether `i < size / 2`. Indices in the lower half are walked forward from the `head`; indices in the upper half are walked backward from the `tail`. This halves the worst-case traversal constant.
+* **Iterable Protocol:** Both list structures natively implement `Symbol.iterator`, enabling sequential enumeration via standard `for...of` loops and array spread mechanics.
+
+---
+
+## Usage Example
+
+```typescript
+import { ForwardList, LinkedList } from '@zeitfall/lists';
+
+// --- ForwardList Example ---
+const forwardList = new ForwardList<number>();
+
+forwardList.append(1).append(2).append(3);
+forwardList.prepend(0);
+forwardList.insertAt(1, 99); 
+
+const droppedValue = forwardList.removeLast(); // 3
+
+// --- LinkedList Example ---
+const linkedList = new LinkedList<string>();
+
+linkedList.append('a').append('b').append('c');
+linkedList.prepend('z');
+
+// Evaluated via bidirectional traversal (backward from tail)
+const targetValue = linkedList.at(2); // 'b'
+
+// Sequential evaluation
+for (const value of linkedList) {
+  console.log(value); // 'z', 'a', 'b', 'c'
 }
 
-// Snapshot
-list.toArray(); // [0, 1, 2, 3]
+const snapshot = linkedList.toArray(); // ['z', 'a', 'b', 'c']
 
-// Removal
-list.removeFirst(); // returns 0
-list.removeLast();  // returns 3
-list.removeAt(1);   // returns 2
-
-// Targeted insertion
-list.insertAt(1, 99); // 1 → 99
-
-// Wipe
-list.clear();
+// Structural wipe and reference nullification
+linkedList.clear();
 ```
-
----
-
-### `LinkedList` — Doubly Linked List
-
-```ts
-import { LinkedList } from '@zeitfall/lists';
-
-const list = new LinkedList<string>();
-
-list.append('a').append('b').append('c'); // a ↔ b ↔ c
-list.prepend('z');                        // z ↔ a ↔ b ↔ c
-
-// Access
-list.first;  // 'z'
-list.last;   // 'c'
-list.at(2);  // 'b'  — resolved via bidirectional traversal
-
-// Search
-list.contains('b'); // true
-
-// Iteration
-for (const value of list) {
-  console.log(value); // z, a, b, c
-}
-
-list.toArray(); // ['z', 'a', 'b', 'c']
-
-// Removal
-list.removeFirst(); // returns 'z'
-list.removeLast();  // returns 'c'
-list.removeAt(0);   // returns 'a'
-
-list.clear();
-```
-
----
-
-## API Overview
-
-All methods are defined on the shared `List<V>` interface. Complexities listed assume `n` = current list size.
-
-| Method | Description | `ForwardList` | `LinkedList` |
-|---|---|:---:|:---:|
-| `first` | Value at head | O(1) | O(1) |
-| `last` | Value at tail | O(1) | O(1) |
-| `size` | Current element count | O(1) | O(1) |
-| `at(i)` | Value at index `i` | O(n) | O(n) |
-| `contains(v)` | Linear value search | O(n) | O(n) |
-| `prepend(v)` | Insert before head | O(1) | O(1) |
-| `append(v)` | Insert after tail | O(1) | O(1) |
-| `insertAt(i, v)` | Insert at index `i` | O(n) | O(n) |
-| `removeFirst()` | Remove & return head value | O(1) | O(1) |
-| `removeLast()` | Remove & return tail value | O(n) | O(1) |
-| `removeAt(i)` | Remove & return value at `i` | O(n) | O(n) |
-| `clear()` | Drop all references | O(1) | O(1) |
-| `toArray()` | Snapshot to `Array<V>` | O(n) | O(n) |
-| `[Symbol.iterator]` | Forward iteration | O(n) | O(n) |
-
-> ¹ **Bidirectional traversal optimization** — `LinkedList.#getNodeAt(i)` selects the traversal direction based on whether `i < size / 2`. Indices in the first half are walked forward from `head`; indices in the second half are walked backward from `tail`. This halves the worst-case traversal constant but does not change the asymptotic class.
-
-**Note on memory management** — every removal path (`removeFirst`, `removeLast`, `removeAt`, `clear`) explicitly nullifies the detached node's `next` (and, for `LinkedList`, `previous`) pointer before the reference is abandoned. This makes previously reachable cycles unreachable at the earliest possible moment, enabling the JavaScript GC to collect detached nodes without waiting for a full heap scan.
-
----
-
-## Resources
-
-- [Wikipedia — Linked list](https://en.wikipedia.org/wiki/Linked_list)
-- [Wikipedia — Doubly linked list](https://en.wikipedia.org/wiki/Doubly_linked_list)
-
----
-
-## License
-
-[MIT](./LICENSE)

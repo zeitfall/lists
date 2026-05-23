@@ -1,7 +1,7 @@
 {
   "name": "@zeitfall/lists",
   "type": "module",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Implementation of basic linked-list data structures",
   "license": "MIT",
   "types": "./dist/index.d.ts",
@@ -12,6 +12,7 @@
       "import": "./dist/index.js"
     }
   },
+  "files": ["dist"],
   "scripts": {
     "test": "node --experimental-strip-types --test",
     "build": "tsc -p ./src/tsconfig.json"
