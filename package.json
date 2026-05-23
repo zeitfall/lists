@@ -1,7 +1,7 @@
 {
   "name": "@zeitfall/lists",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Implementation of basic linked-list data structures",
   "license": "MIT",
   "types": "./dist/index.d.ts",
@@ -27,6 +27,16 @@
     "type": "git",
     "url": "git+https://github.com/zeitfall/lists.git"
   },
+  "keywords": [
+    "typescript",
+    "data-structures",
+    "singly-linked-list",
+    "doubly-linked-list",
+    "forward-list",
+    "linked-list",
+    "zero-dependency",
+    "performance"
+  ],
   "devDependencies": {
     "@types/node": "^25.9.1",
     "typescript": "^6.0.3"
